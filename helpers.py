@@ -41,9 +41,10 @@ def transform(m):
     rot90_3 = np.rot90(m, k=-3)  # 270 degrees clockwise
     flip_horiz = np.fliplr(m)    # Horizontal flip
     flip_vert = np.flipud(m)     # Vertical flip
-    main_diag_flip = m.T         # Flip along the main diagonal (transpose)
-    anti_diag_flip = np.transpose(np.fliplr(m))  # Flip along the anti-diagonal
-
+    # main_diag_flip = m.T         # Flip along the main diagonal (transpose)
+    # anti_diag_flip = np.transpose(np.fliplr(m))  # Flip along the anti-diagonal
+    d1 = np.rot90(flip_horiz, k=-1)  # Horizontal flip + 90 degrees rotation
+    d2 = np.rot90(flip_vert, k=-1) # Vertical flip + 90 degrees rotation
     # Store all matrices in a dictionary for display
     ma_transformed = {
         "Original": m,
@@ -52,8 +53,10 @@ def transform(m):
         "270° Rotation": rot90_3,
         "Horizontal Flip": flip_horiz,
         "Vertical Flip": flip_vert,
-        "Main Diagonal Flip": main_diag_flip,
-        "Anti-Diagonal Flip": anti_diag_flip
+#        "Main Diagonal Flip": main_diag_flip,
+#        "Anti-Diagonal Flip": anti_diag_flip
+        "d1": d1,
+        "d2": d2
     }
     return(pd.Series(ma_transformed))
 
@@ -73,9 +76,10 @@ def boundary_to_decimal(matrix):
 
 def get_all_boundaries(df):
     z = []
-    for i in range(1, 10):
-        tile = get_tile_number(i, df)
-        img = get_image(i, df)
+    # Each tile defined in 11 rows
+    for i in range(len(df)//11):
+        tile = get_tile_number(i+1, df)
+        img = get_image(i+1, df)
         m = image_to_matrix(img)
         m_all = transform(m)
         for j in range(8):
@@ -87,18 +91,23 @@ def get_all_boundaries(df):
 
 def get_all_transforms(df):
     z = []
-    for i in range(1, 10):
-        tile = get_tile_number(i, df)
-        img = get_image(i, df)
+    for i in range(len(df)//11):
+        tile = get_tile_number(i+1, df)
+        img = get_image(i+1, df)
         m = image_to_matrix(img)
         m_all = transform(m)
         for j in range(8):
             boundary = boundary_to_decimal(m_all.iloc[j])
-            z.append([tile, j+1,boundary])
+            z.append([tile, j+1, boundary])
     resp = pd.DataFrame(z, columns=['id', 'transformation', 'boundaries'])
     return(resp)
 
 def n_coincidences(b, id, boundaries):
     new_df = boundaries[boundaries['id']!=id] 
     matches = new_df[new_df['value'] == b]['id'].nunique()
+    return(matches)
+
+def coincidence_piece(b, id, position,  boundaries):
+    new_df = boundaries[boundaries['id']!=id] 
+    matches = new_df[new_df['value'] == b][['id', 'transformation']]
     return(matches)
